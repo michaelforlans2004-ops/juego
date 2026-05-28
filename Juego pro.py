@@ -6,78 +6,88 @@ COLOR_CLARO = "#FFFFFF"
 COLOR_OSCURO = "#000000"   
 COLOR_SELECCION = "#7ae7ff" 
 CARPETA_IMAGENES = "imagenes"
-
-TABLERO = [
-    ["torre_n", "caballo_n", "alfil_n", "reina_n", "rey_n", "alfil_n", "caballo_n", "torre_n"],
-    ["peon_n",  "peon_n",    "peon_n",  "peon_n",  "peon_n", "peon_n",  "peon_n",    "peon_n"],
-    ["",        "",          "",        "",        "",        "",        "",          ""],
-    ["",        "",          "",        "",        "",        "",        "",          ""],
-    ["",        "",          "",        "",        "",        "",        "",          ""],
-    ["",        "",          "",        "",        "",        "",        "",          ""],
-    ["peon_b",  "peon_b",    "peon_b",  "peon_b",  "peon_b", "peon_b",  "peon_b",    "peon_b"],
-    ["torre_b", "caballo_b", "alfil_b", "reina_b", "rey_b", "alfil_b", "caballo_b", "torre_b"]
-]
+TIEMPO_INICIAL = 600 
 
 SIMBOLOS_PIEZAS = {
     "peon_b": "♙", "torre_b": "♖", "caballo_b": "♘", "alfil_b": "♗", "reina_b": "♕", "rey_b": "♔",
     "peon_n": "♟", "torre_n": "♜", "caballo_n": "♞", "alfil_n": "♝", "reina_n": "♛", "rey_n": "♚"
 }
 
-class AjedrezDosClics:
+class AjedrezCompleto:
     def __init__(self, root):
         self.root = root
-        self.root.title("Ajedrez - Movimientos Reales")
+        self.root.title("Ajedrez Profesional - Reglas Completas")
+        
+       
+        self.tablero = [
+            ["torre_n", "caballo_n", "alfil_n", "reina_n", "rey_n", "alfil_n", "caballo_n", "torre_n"],
+            ["peon_n"] * 8,
+            [""] * 8, [""] * 8, [""] * 8, [""] * 8,
+            ["peon_b"] * 8,
+            ["torre_b", "caballo_b", "alfil_b", "reina_b", "rey_b", "alfil_b", "caballo_b", "torre_b"]
+        ]
+        self.turno = "b"  
+        self.origen_seleccionado = None
+        self.imagenes_piezas = {}
+        
+        self.rey_movido = {"b": False, "n": False}
+        self.torre_movida = {"b": [False, False], "n": [False, False]} 
+        self.ultimo_avance_doble_peon = None 
+        
+        self.tiempo = {"b": TIEMPO_INICIAL, "n": TIEMPO_INICIAL}
+        self.juego_activo = True
+        
+        self.panel_superior = tk.Frame(root, bg="#2c3e50")
+        self.panel_superior.pack(fill=tk.X, padx=10, pady=10)
+        
+        self.lbl_reloj_b = tk.Label(self.panel_superior, text="Blancas: 10:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
+        self.lbl_reloj_b.pack(side=tk.LEFT, padx=20)
+        
+        self.lbl_estado = tk.Label(self.panel_superior, text="Turno: Blancas", font=("Arial", 14), fg="#f1c40f", bg="#2c3e50")
+        self.lbl_estado.pack(side=tk.TOP)
+        
+        self.lbl_reloj_n = tk.Label(self.panel_superior, text="Negras: 10:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
+        self.lbl_reloj_n.pack(side=tk.RIGHT, padx=20)
         
         self.canvas = tk.Canvas(root, width=8*TAMANO_CASILLA, height=8*TAMANO_CASILLA)
         self.canvas.pack()
-        
-        self.imagenes_piezas = {}
-        self.origen_seleccionado = None  
-        self.recuadro_seleccion = None
-        self.turno = "b"  
         
         self.cargar_imagenes()
         self.actualizar_interfaz()
         
         self.canvas.bind("<Button-1>", self.gestionar_clic)
+        self.actualizar_reloj()
 
     def cargar_imagenes(self):
         piezas = ["peon", "torre", "caballo", "alfil", "reina", "rey"]
-        colores = ["b", "n"]
         for pieza in piezas:
-            for color in colores:
+            for color in ["b", "n"]:
                 nombre_clave = f"{pieza}_{color}"
                 ruta = os.path.join(CARPETA_IMAGENES, f"{nombre_clave}.png")
-                if os.path.exists(ruta):
-                    self.imagenes_piezas[nombre_clave] = tk.PhotoImage(file=ruta)
-                else:
-                    self.imagenes_piezas[nombre_clave] = None
+                self.imagenes_piezas[nombre_clave] = tk.PhotoImage(file=ruta) if os.path.exists(ruta) else None
 
     def actualizar_interfaz(self):
-        """Borra todo el canvas y lo redibuja según el estado actual de la matriz TABLERO"""
         self.canvas.delete("all")
         
         for fila in range(8):
             for columna in range(8):
                 color = COLOR_CLARO if (fila + columna) % 2 == 0 else COLOR_OSCURO
                 x1, y1 = columna * TAMANO_CASILLA, fila * TAMANO_CASILLA
-                x2, y2 = x1 + TAMANO_CASILLA, y1 + TAMANO_CASILLA
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
+                self.canvas.create_rectangle(x1, y1, x1 + TAMANO_CASILLA, y1 + TAMANO_CASILLA, fill=color, outline="")
 
         if self.origen_seleccionado:
             f, c = self.origen_seleccionado
             x1, y1 = c * TAMANO_CASILLA, f * TAMANO_CASILLA
-            x2, y2 = x1 + TAMANO_CASILLA, y1 + TAMANO_CASILLA
-            self.canvas.create_rectangle(x1, y1, x2, y2, fill=COLOR_SELECCION, outline="")
+            self.canvas.create_rectangle(x1, y1, x1 + TAMANO_CASILLA, y1 + TAMANO_CASILLA, fill=COLOR_SELECCION, outline="")
 
         for fila in range(8):
             for columna in range(8):
-                nombre_pieza = TABLERO[fila][columna]
+                nombre_pieza = self.tablero[fila][columna]
                 if nombre_pieza != "":
                     x = (columna * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
                     y = (fila * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
                     
-                    if self.imagenes_piezas.get(nombre_pieza) is not None:
+                    if self.imagenes_piezas.get(nombre_pieza):
                         self.canvas.create_image(x, y, image=self.imagenes_piezas[nombre_pieza])
                     else:
                         simbolo = SIMBOLOS_PIEZAS.get(nombre_pieza, "?")
@@ -85,102 +95,209 @@ class AjedrezDosClics:
                         
                         color_txt = "#FFFFFF" if color_pieza == "b" else "#000000"
                         color_borde = "#000000" if color_pieza == "b" else "#FFFFFF"
-                        
                         fuente = ("Arial", 36, "bold")
-                        self.canvas.create_text(x-1, y, text=simbolo, font=fuente, fill=color_borde)
-                        self.canvas.create_text(x+1, y, text=simbolo, font=fuente, fill=color_borde)
-                        self.canvas.create_text(x, y-1, text=simbolo, font=fuente, fill=color_borde)
-                        self.canvas.create_text(x, y+1, text=simbolo, font=fuente, fill=color_borde)
                         
+                        for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+                            self.canvas.create_text(x+dx, y+dy, text=simbolo, font=fuente, fill=color_borde)
                         self.canvas.create_text(x, y, text=simbolo, font=fuente, fill=color_txt)
 
+    def actualizar_reloj(self):
+        if not self.juego_activo:
+            return
+        
+        self.tiempo[self.turno] -= 1
+        
+        if self.tiempo[self.turno] <= 0:
+            self.tiempo[self.turno] = 0
+            self.juego_activo = False
+            ganador = "Negras" if self.turno == "b" else "Blancas"
+            self.lbl_estado.config(text=f"¡Tiempo agotado! Ganan las {ganador}", fg="#e74c3c")
+        
+        for c, lbl in [("b", self.lbl_reloj_b), ("n", self.lbl_reloj_n)]:
+            minutos = self.tiempo[c] // 60
+            segundos = self.tiempo[c] % 60
+            lbl.config(text=f"{'Blancas' if c=='b' else 'Negras'}: {minutos:02d}:{segundos:02d}")
+            
+        self.root.after(1000, self.actualizar_reloj)
+
     def gestionar_clic(self, event):
+        if not self.juego_activo: return
+        
         columna = event.x // TAMANO_CASILLA
         fila = event.y // TAMANO_CASILLA
         
         if self.origen_seleccionado is None:
-            pieza = TABLERO[fila][columna]
+            pieza = self.tablero[fila][columna]
             if pieza != "" and pieza.endswith(f"_{self.turno}"):
                 self.origen_seleccionado = (fila, columna)
                 self.actualizar_interfaz()
-        
         else:
-            f_origen, c_origen = self.origen_seleccionado
-            
-            if (fila, columna) == (f_origen, c_origen):
+            f_orig, c_orig = self.origen_seleccionado
+            if (fila, columna) == (f_orig, c_orig):
                 self.origen_seleccionado = None
                 self.actualizar_interfaz()
                 return
 
-            pieza = TABLERO[f_origen][c_origen]
+            pieza = self.tablero[f_orig][c_orig]
             
-            if self.es_movimiento_legal(pieza, f_origen, c_origen, fila, columna):
-                TABLERO[fila][columna] = pieza
-                TABLERO[f_origen][c_origen] = ""
-                self.turno = "n" if self.turno == "b" else "b"
+            if self.es_movimiento_legal_completo(pieza, f_orig, c_orig, fila, columna):
+                self.ejecutar_movimiento(pieza, f_orig, c_orig, fila, columna)
                 
+                self.turno = "n" if self.turno == "b" else "b"
+                self.lbl_estado.config(text=f"Turno: {'Blancas' if self.turno == 'b' else 'Negras'}")
+                
+                if self.esta_en_jaque(self.turno, self.tablero):
+                    if self.tiene_movimientos_legales(self.turno):
+                        self.lbl_estado.config(text=f"¡Jaque a las {'Blancas' if self.turno == 'b' else 'Negras'}!", fg="#e74c3c")
+                    else:
+                        self.lbl_estado.config(text=f"¡Jaque Mate! Ganan las {'Negras' if self.turno == 'b' else 'Blancas'}", fg="#2ecc71")
+                        self.juego_activo = False
+                elif not self.tiene_movimientos_legales(self.turno):
+                    self.lbl_estado.config(text="Tablas por Ahogado", fg="#95a5a6")
+                    self.juego_activo = False
+                    
             self.origen_seleccionado = None
             self.actualizar_interfaz()
 
-    def es_movimiento_legal(self, pieza, f1, c1, f2, c2):
-        tipo_pieza = pieza.split("_")[0]
-        color_pieza = pieza.split("_")[1]
-        
-        destino = TABLERO[f2][c2]
-        if destino != "" and destino.endswith(f"_{color_pieza}"):
+    def es_movimiento_legal_completo(self, pieza, f1, c1, f2, c2):
+        legal_base, tipo_mov = self.es_movimiento_legal_base(pieza, f1, c1, f2, c2)
+        if not legal_base:
             return False
             
-        df = f2 - f1  
-        dc = c2 - c1  
+        tablero_clon = [fila[:] for fila in self.tablero]
+        color = pieza.split("_")[1]
         
-        if tipo_pieza == "peon":
-            direccion = -1 if color_pieza == "b" else 1
-            fila_inicial = 6 if color_pieza == "b" else 1
+        tablero_clon[f2][c2] = pieza
+        tablero_clon[f1][c1] = ""
+        if tipo_mov == "al_paso" and self.ultimo_avance_doble_peon:
+            _, cp = self.ultimo_avance_doble_peon
+            tablero_clon[f1][cp] = ""
             
-            if dc == 0 and df == direccion and destino == "":
-                return True
-            if dc == 0 and f1 == fila_inicial and df == 2 * direccion and destino == "":
-                if TABLERO[f1 + direccion][c1] == "":
-                    return True
+        if self.esta_en_jaque(color, tablero_clon):
+            return False
+            
+        if tipo_mov == "enroque":
+            paso_c = 1 if c2 > c1 else -1
+            if self.esta_en_jaque(color, self.tablero) or \
+               self.casilla_amenazada(color, f1, c1 + paso_c, self.tablero):
+                return False
+                
+        return True
+
+    def es_movimiento_legal_base(self, pieza, f1, c1, f2, c2):
+        tipo, color = pieza.split("_")
+        destino = self.tablero[f2][c2]
+        df, dc = f2 - f1, c2 - c1
         
-            if abs(dc) == 1 and df == direccion and destino != "":
-                return True
-            return False
+        if destino != "" and destino.endswith(f"_{color}"): 
+            return False, None
 
-        elif tipo_pieza == "caballo":
-            return (abs(df) == 2 and abs(dc) == 1) or (abs(df) == 1 and abs(dc) == 2)
+        if tipo == "peon":
+            dir_p = -1 if color == "b" else 1
+            f_ini = 6 if color == "b" else 1
+            
+            if dc == 0 and df == dir_p and destino == "": 
+                return True, "normal"
+            if dc == 0 and f1 == f_ini and df == 2 * dir_p and destino == "" and self.tablero[f1 + dir_p][c1] == "":
+                return True, "doble_peon"
+            if abs(dc) == 1 and df == dir_p and destino != "": 
+                return True, "normal"
+            if abs(dc) == 1 and df == dir_p and destino == "" and self.ultimo_avance_doble_peon == (f1, c2):
+                return True, "al_paso"
+            return False, None
 
-        elif tipo_pieza == "rey":
-            return abs(df) <= 1 and abs(dc) <= 1
+        elif tipo == "caballo":
+            if (abs(df) == 2 and abs(dc) == 1) or (abs(df) == 1 and abs(dc) == 2):
+                return True, "normal"
+            return False, None
 
-        elif tipo_pieza == "torre":
-            if f1 != f2 and c1 != c2: return False 
-            return self.camino_libre(f1, c1, f2, c2)
+        elif tipo == "rey":
+            if abs(df) <= 1 and abs(dc) <= 1: 
+                return True, "normal"
+            if df == 0 and abs(dc) == 2 and not self.rey_movido[color]:
+                if dc == 2 and not self.torre_movida[color][1] and self.camino_libre(f1, c1, f1, 7): # Corto
+                    return True, "enroque"
+                if dc == -2 and not self.torre_movida[color][0] and self.camino_libre(f1, c1, f1, 0): # Largo
+                    return True, "enroque"
+            return False, None
 
-        elif tipo_pieza == "alfil":
-            if abs(df) != abs(dc): return False 
-            return self.camino_libre(f1, c1, f2, c2)
-
-        elif tipo_pieza == "reina":
-            if (f1 == f2 or c1 == c2) or (abs(df) == abs(dc)):
-                return self.camino_libre(f1, c1, f2, c2)
-            return False
-
-        return False
+        elif tipo == "torre":
+            if (f1 == f2 or c1 == c2) and self.camino_libre(f1, c1, f2, c2): return True, "normal"
+        elif tipo == "alfil":
+            if abs(df) == abs(dc) and self.camino_libre(f1, c1, f2, c2): return True, "normal"
+        elif tipo == "reina":
+            if (f1 == f2 or c1 == c2 or abs(df) == abs(dc)) and self.camino_libre(f1, c1, f2, c2): return True, "normal"
+            
+        return False, None
 
     def camino_libre(self, f1, c1, f2, c2):
         paso_f = 0 if f1 == f2 else (1 if f2 > f1 else -1)
         paso_c = 0 if c1 == c2 else (1 if c2 > c1 else -1)
-        
-        actual_f, actual_c = f1 + paso_f, c1 + paso_c
-        while (actual_f, actual_c) != (f2, c2):
-            if TABLERO[actual_f][actual_c] != "":
-                return False
-            actual_f += paso_f
-            actual_c += paso_c
+        curr_f, curr_c = f1 + paso_f, c1 + paso_c
+        while (curr_f, curr_c) != (f2, c2):
+            if self.tablero[curr_f][curr_c] != "": return False
+            curr_f += paso_f
+            curr_c += paso_c
         return True
+
+    def ejecutar_movimiento(self, pieza, f1, c1, f2, c2):
+        tipo, color = pieza.split("_")
+        _, tipo_mov = self.es_movimiento_legal_base(pieza, f1, c1, f2, c2)
+        
+        self.tablero[f2][c2] = pieza
+        self.tablero[f1][c1] = ""
+        
+        self.ultimo_avance_doble_peon = (f2, c2) if tipo_mov == "doble_peon" else None
+        
+        if tipo_mov == "al_paso":
+            self.tablero[f1][c2] = ""
+            
+        if tipo_mov == "enroque":
+            if c2 == 6: # Corto
+                self.tablero[f2][5] = f"torre_{color}"
+                self.tablero[f2][7] = ""
+            elif c2 == 2: # Largo
+                self.tablero[f2][3] = f"torre_{color}"
+                self.tablero[f2][0] = ""
+
+        if tipo == "peon" and (f2 == 0 or f2 == 7):
+            self.tablero[f2][c2] = f"reina_{color}"
+            
+        if tipo == "rey": self.rey_movido[color] = True
+        if tipo == "torre":
+            if c1 == 0: self.torre_movida[color][0] = True
+            if c1 == 7: self.torre_movida[color][1] = True
+
+    def casilla_amenazada(self, color_defensor, f, c, matriz):
+        color_atacante = "n" if color_defensor == "b" else "b"
+        for fila_a in range(8):
+            for col_a in range(8):
+                p_atacante = matriz[fila_a][col_a]
+                if p_atacante != "" and p_atacante.endswith(f"_{color_atacante}"):
+                    es_legal, _ = self.es_movimiento_legal_base(p_atacante, fila_a, col_a, f, c)
+                    if es_legal:
+                        return True
+        return False
+
+    def esta_en_jaque(self, color, matriz):
+        for fila in range(8):
+            for col in range(8):
+                if matriz[fila][col] == f"rey_{color}":
+                    return self.casilla_amenazada(color, fila, col, matriz)
+        return False
+
+    def tiene_movimientos_legales(self, color):
+        for f1 in range(8):
+            for c1 in range(8):
+                pieza = self.tablero[f1][c1]
+                if pieza != "" and pieza.endswith(f"_{color}"):
+                    for f2 in range(8):
+                        for c2 in range(8):
+                            if self.es_movimiento_legal_completo(pieza, f1, c1, f2, c2):
+                                return True
+        return False
 
 if __name__ == "__main__":
     ventana = tk.Tk()
-    app = AjedrezDosClics(ventana)
+    app = AjedrezCompleto(ventana)
     ventana.mainloop()
