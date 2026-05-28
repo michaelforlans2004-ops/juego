@@ -253,10 +253,10 @@ class AjedrezCompleto:
             self.tablero[f1][c2] = ""
             
         if tipo_mov == "enroque":
-            if c2 == 6: # Corto
+            if c2 == 6: 
                 self.tablero[f2][5] = f"torre_{color}"
                 self.tablero[f2][7] = ""
-            elif c2 == 2: # Largo
+            elif c2 == 2: 
                 self.tablero[f2][3] = f"torre_{color}"
                 self.tablero[f2][0] = ""
 
