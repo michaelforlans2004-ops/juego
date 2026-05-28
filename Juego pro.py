@@ -1,13 +1,13 @@
 import tkinter as tk
 import os
+import random  
 
 TAMANO_CASILLA = 70       
 COLOR_CLARO = "#FFFFFF"    
 COLOR_OSCURO = "#000000"   
 COLOR_SELECCION = "#7ae7ff" 
-COLOR_POSIBLE = "#a3e4d7" 
+COLOR_POSIBLE = "#a3e4d7"  
 CARPETA_IMAGENES = "imagenes"
-TIEMPO_INICIAL = 600 
 
 SIMBOLOS_PIEZAS = {
     "peon_b": "♙", "torre_b": "♖", "caballo_b": "♘", "alfil_b": "♗", "reina_b": "♕", "rey_b": "♔",
@@ -35,19 +35,20 @@ class AjedrezCompleto:
         self.torre_movida = {"b": [False, False], "n": [False, False]} 
         self.ultimo_avance_doble_peon = None 
         
-        self.tiempo = {"b": TIEMPO_INICIAL, "n": TIEMPO_INICIAL}
+      
+        self.tiempo = {"b": 0, "n": 0}
         self.juego_activo = True
         
         self.panel_superior = tk.Frame(root, bg="#2c3e50")
         self.panel_superior.pack(fill=tk.X, padx=10, pady=10)
         
-        self.lbl_reloj_b = tk.Label(self.panel_superior, text="Blancas: 10:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
+        self.lbl_reloj_b = tk.Label(self.panel_superior, text="Blancas: 00:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
         self.lbl_reloj_b.pack(side=tk.LEFT, padx=20)
         
         self.lbl_estado = tk.Label(self.panel_superior, text="Turno: Blancas", font=("Arial", 14), fg="#f1c40f", bg="#2c3e50")
         self.lbl_estado.pack(side=tk.TOP)
         
-        self.lbl_reloj_n = tk.Label(self.panel_superior, text="Negras: 10:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
+        self.lbl_reloj_n = tk.Label(self.panel_superior, text="Negras: 00:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
         self.lbl_reloj_n.pack(side=tk.RIGHT, padx=20)
         
         self.canvas = tk.Canvas(root, width=8*TAMANO_CASILLA, height=8*TAMANO_CASILLA)
@@ -112,13 +113,7 @@ class AjedrezCompleto:
         if not self.juego_activo:
             return
         
-        self.tiempo[self.turno] -= 1
-        
-        if self.tiempo[self.turno] <= 0:
-            self.tiempo[self.turno] = 0
-            self.juego_activo = False
-            ganador = "Negras" if self.turno == "b" else "Blancas"
-            self.lbl_estado.config(text=f"¡Tiempo agotado! Ganan las {ganador}", fg="#e74c3c")
+        self.tiempo[self.turno] += 1
         
         for c, lbl in [("b", self.lbl_reloj_b), ("n", self.lbl_reloj_n)]:
             minutos = self.tiempo[c] // 60
@@ -137,7 +132,6 @@ class AjedrezCompleto:
             pieza = self.tablero[fila][columna]
             if pieza != "" and pieza.endswith(f"_{self.turno}"):
                 self.origen_seleccionado = (fila, columna)
-                
                 self.movimientos_posibles = []
                 for f2 in range(8):
                     for c2 in range(8):
@@ -230,9 +224,9 @@ class AjedrezCompleto:
             if abs(df) <= 1 and abs(dc) <= 1: 
                 return True, "normal"
             if df == 0 and abs(dc) == 2 and not self.rey_movido[color]:
-                if dc == 2 and not self.torre_movida[color][1] and self.camino_libre(f1, c1, f1, 7): # Corto
+                if dc == 2 and not self.torre_movida[color][1] and self.camino_libre(f1, c1, f1, 7): 
                     return True, "enroque"
-                if dc == -2 and not self.torre_movida[color][0] and self.camino_libre(f1, c1, f1, 0): # Largo
+                if dc == -2 and not self.torre_movida[color][0] and self.camino_libre(f1, c1, f1, 0): 
                     return True, "enroque"
             return False, None
 
@@ -255,10 +249,60 @@ class AjedrezCompleto:
             curr_c += paso_c
         return True
 
+    # Nuevo: Método encargado de calcular e ir dibujando los frames de la animación
+    def animar_explosion(self, particulas, iteracion=0):
+        if iteracion > 12: # Detener la animación tras 12 actualizaciones
+            self.actualizar_interfaz() # Redibuja el tablero limpio
+            return
+
+        # Colores dinámicos de fuego/explosión para las partículas
+        colores = ["#e74c3c", "#e67e22", "#f1c40f", "#ffffff"]
+
+        for p in particulas:
+            # Actualizamos las coordenadas basadas en su velocidad vectorial indepediente
+            p['x'] += p['vx']
+            p['y'] += p['vy']
+            # Reducimos progresivamente el tamaño de la partícula
+            p['radio'] = max(1, p['radio'] - 0.4)
+            
+            # Dibujamos círculos directamente sobre los escaques ya impresos
+            self.canvas.create_oval(
+                p['x'] - p['radio'], p['y'] - p['radio'],
+                p['x'] + p['radio'], p['y'] + p['radio'],
+                fill=random.choice(colores), outline=""
+            )
+
+        # Volver a invocar el método tras 30ms para generar fluidez (aproximadamente 30 FPS)
+        self.root.after(30, lambda: self.animar_explosion(particulas, iteracion + 1))
+
+    # Nuevo: Método puente que define las propiedades físicas de partida de cada círculo
+    def disparar_explosion(self, fila, columna):
+        # Centro geométrico de la casilla objetivo
+        centro_x = (columna * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
+        centro_y = (fila * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
+        
+        particulas = []
+        for _ in range(25): # Cantidad de chispas individuales
+            angulo = random.uniform(0, 2 * 3.1415)
+            velocidad = random.uniform(2, 7)
+            particulas.append({
+                'x': centro_x,
+                'y': centro_y,
+                'vx': velocidad * random.uniform(-1, 1),
+                'vy': velocidad * random.uniform(-1, 1),
+                'radio': random.uniform(4, 9)
+            })
+        
+        self.animar_explosion(particulas)
+
     def ejecutar_movimiento(self, pieza, f1, c1, f2, c2):
         tipo, color = pieza.split("_")
         _, tipo_mov = self.es_movimiento_legal_base(pieza, f1, c1, f2, c2)
         
+        # Modificado: Detectar si el movimiento implica una captura tradicional o al paso
+        destino_ocupado = self.tablero[f2][c2] != ""
+        es_captura_al_paso = (tipo_mov == "al_paso")
+
         self.tablero[f2][c2] = pieza
         self.tablero[f1][c1] = ""
         
@@ -282,6 +326,12 @@ class AjedrezCompleto:
         if tipo == "torre":
             if c1 == 0: self.torre_movida[color][0] = True
             if c1 == 7: self.torre_movida[color][1] = True
+
+        # Modificado: Ejecutar la explosión en las coordenadas adecuadas tras alterar la matriz
+        if destino_ocupado:
+            self.disparar_explosion(f2, c2)
+        elif es_captura_al_paso:
+            self.disparar_explosion(f1, c2) # Detona sobre la coordenada física real del peón enemigo comido
 
     def casilla_amenazada(self, color_defensor, f, c, matriz):
         color_atacante = "n" if color_defensor == "b" else "b"
