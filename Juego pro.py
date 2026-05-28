@@ -5,6 +5,7 @@ TAMANO_CASILLA = 70
 COLOR_CLARO = "#FFFFFF"    
 COLOR_OSCURO = "#000000"   
 COLOR_SELECCION = "#7ae7ff" 
+COLOR_POSIBLE = "#a3e4d7" 
 CARPETA_IMAGENES = "imagenes"
 TIEMPO_INICIAL = 600 
 
@@ -18,7 +19,6 @@ class AjedrezCompleto:
         self.root = root
         self.root.title("Ajedrez Profesional - Reglas Completas")
         
-       
         self.tablero = [
             ["torre_n", "caballo_n", "alfil_n", "reina_n", "rey_n", "alfil_n", "caballo_n", "torre_n"],
             ["peon_n"] * 8,
@@ -28,6 +28,7 @@ class AjedrezCompleto:
         ]
         self.turno = "b"  
         self.origen_seleccionado = None
+        self.movimientos_posibles = [] 
         self.imagenes_piezas = {}
         
         self.rey_movido = {"b": False, "n": False}
@@ -74,6 +75,12 @@ class AjedrezCompleto:
                 color = COLOR_CLARO if (fila + columna) % 2 == 0 else COLOR_OSCURO
                 x1, y1 = columna * TAMANO_CASILLA, fila * TAMANO_CASILLA
                 self.canvas.create_rectangle(x1, y1, x1 + TAMANO_CASILLA, y1 + TAMANO_CASILLA, fill=color, outline="")
+
+        for (f, c) in self.movimientos_posibles:
+            x1, y1 = c * TAMANO_CASILLA, f * TAMANO_CASILLA
+            radio = 12
+            centro_x, centro_y = x1 + TAMANO_CASILLA // 2, y1 + TAMANO_CASILLA // 2
+            self.canvas.create_oval(centro_x - radio, centro_y - radio, centro_x + radio, centro_y + radio, fill=COLOR_POSIBLE, outline="")
 
         if self.origen_seleccionado:
             f, c = self.origen_seleccionado
@@ -130,11 +137,18 @@ class AjedrezCompleto:
             pieza = self.tablero[fila][columna]
             if pieza != "" and pieza.endswith(f"_{self.turno}"):
                 self.origen_seleccionado = (fila, columna)
+                
+                self.movimientos_posibles = []
+                for f2 in range(8):
+                    for c2 in range(8):
+                        if self.es_movimiento_legal_completo(pieza, fila, columna, f2, c2):
+                            self.movimientos_posibles.append((f2, c2))
                 self.actualizar_interfaz()
         else:
             f_orig, c_orig = self.origen_seleccionado
             if (fila, columna) == (f_orig, c_orig):
                 self.origen_seleccionado = None
+                self.movimientos_posibles = [] 
                 self.actualizar_interfaz()
                 return
 
@@ -157,6 +171,7 @@ class AjedrezCompleto:
                     self.juego_activo = False
                     
             self.origen_seleccionado = None
+            self.movimientos_posibles = [] 
             self.actualizar_interfaz()
 
     def es_movimiento_legal_completo(self, pieza, f1, c1, f2, c2):
