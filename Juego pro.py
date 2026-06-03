@@ -249,40 +249,40 @@ class AjedrezCompleto:
             curr_c += paso_c
         return True
 
-    # Nuevo: Método encargado de calcular e ir dibujando los frames de la animación
+    
     def animar_explosion(self, particulas, iteracion=0):
-        if iteracion > 12: # Detener la animación tras 12 actualizaciones
-            self.actualizar_interfaz() # Redibuja el tablero limpio
+        if iteracion > 12: 
+            self.actualizar_interfaz() 
             return
 
-        # Colores dinámicos de fuego/explosión para las partículas
+        
         colores = ["#e74c3c", "#e67e22", "#f1c40f", "#ffffff"]
 
         for p in particulas:
-            # Actualizamos las coordenadas basadas en su velocidad vectorial indepediente
+            
             p['x'] += p['vx']
             p['y'] += p['vy']
-            # Reducimos progresivamente el tamaño de la partícula
+            
             p['radio'] = max(1, p['radio'] - 0.4)
             
-            # Dibujamos círculos directamente sobre los escaques ya impresos
+            
             self.canvas.create_oval(
                 p['x'] - p['radio'], p['y'] - p['radio'],
                 p['x'] + p['radio'], p['y'] + p['radio'],
                 fill=random.choice(colores), outline=""
             )
 
-        # Volver a invocar el método tras 30ms para generar fluidez (aproximadamente 30 FPS)
+       
         self.root.after(30, lambda: self.animar_explosion(particulas, iteracion + 1))
 
-    # Nuevo: Método puente que define las propiedades físicas de partida de cada círculo
+   
     def disparar_explosion(self, fila, columna):
-        # Centro geométrico de la casilla objetivo
+        
         centro_x = (columna * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
         centro_y = (fila * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
         
         particulas = []
-        for _ in range(25): # Cantidad de chispas individuales
+        for _ in range(25): 
             angulo = random.uniform(0, 2 * 3.1415)
             velocidad = random.uniform(2, 7)
             particulas.append({
@@ -299,7 +299,7 @@ class AjedrezCompleto:
         tipo, color = pieza.split("_")
         _, tipo_mov = self.es_movimiento_legal_base(pieza, f1, c1, f2, c2)
         
-        # Modificado: Detectar si el movimiento implica una captura tradicional o al paso
+       
         destino_ocupado = self.tablero[f2][c2] != ""
         es_captura_al_paso = (tipo_mov == "al_paso")
 
@@ -327,11 +327,11 @@ class AjedrezCompleto:
             if c1 == 0: self.torre_movida[color][0] = True
             if c1 == 7: self.torre_movida[color][1] = True
 
-        # Modificado: Ejecutar la explosión en las coordenadas adecuadas tras alterar la matriz
+        
         if destino_ocupado:
             self.disparar_explosion(f2, c2)
         elif es_captura_al_paso:
-            self.disparar_explosion(f1, c2) # Detona sobre la coordenada física real del peón enemigo comido
+            self.disparar_explosion(f1, c2) 
 
     def casilla_amenazada(self, color_defensor, f, c, matriz):
         color_atacante = "n" if color_defensor == "b" else "b"
