@@ -18,6 +18,7 @@ class AjedrezCompleto:
     def __init__(self, root):
         self.root = root
         self.root.title("Ajedrez Profesional - Reglas Completas")
+        self.root.configure(bg="#1a252f")
         
         self.tablero = [
             ["torre_n", "caballo_n", "alfil_n", "reina_n", "rey_n", "alfil_n", "caballo_n", "torre_n"],
@@ -35,11 +36,76 @@ class AjedrezCompleto:
         self.torre_movida = {"b": [False, False], "n": [False, False]} 
         self.ultimo_avance_doble_peon = None 
         
-      
         self.tiempo = {"b": 0, "n": 0}
+        self.juego_activo = False 
+        
+        
+        self.frame_menu = tk.Frame(self.root, bg="#1a252f")
+        self.frame_juego = tk.Frame(self.root, bg="#1a252f")
+        
+        self.crear_pantalla_inicio()
+
+    def crear_pantalla_inicio(self):
+        self.frame_menu.pack(fill=tk.BOTH, expand=True, padx=40, pady=40)
+        
+        lbl_titulo = tk.Label(
+            self.frame_menu, 
+            text="AJEDREZ\nPROFESIONAL", 
+            font=("Helvetica", 28, "bold"), 
+            fg="#f1c40f", 
+            bg="#1a252f",
+            justify=tk.CENTER
+        )
+        lbl_titulo.pack(pady=(20, 10))
+        
+        
+        lbl_decoracion = tk.Label(
+            self.frame_menu, 
+            text="♔ ♕ ♖ ♗ ♘ ♙", 
+            font=("Arial", 20), 
+            fg="#ecf0f1", 
+            bg="#1a252f"
+        )
+        lbl_decoracion.pack(pady=(0, 40))
+        
+        
+        btn_jugar = tk.Button(
+            self.frame_menu, 
+            text="JUGAR PARTIDA", 
+            font=("Helvetica", 14, "bold"),
+            bg="#2ecc71", 
+            fg="white", 
+            activebackground="#27ae60", 
+            activeforeground="white",
+            padx=20, 
+            pady=10, 
+            bd=0, 
+            cursor="hand2",
+            command=self.iniciar_interfaz_juego
+        )
+        btn_jugar.pack(pady=20)
+        
+        
+        lbl_pie = tk.Label(
+            self.frame_menu, 
+            text="Desarrollado con reglas completas y efectos visuales", 
+            font=("Helvetica", 9, "italic"), 
+            fg="#7f8c8d", 
+            bg="#1a252f"
+        )
+        lbl_pie.pack(side=tk.BOTTOM, pady=10)
+
+    def iniciar_interfaz_juego(self):
+        
+        self.frame_menu.pack_forget()
+        
+       
         self.juego_activo = True
         
-        self.panel_superior = tk.Frame(root, bg="#2c3e50")
+       
+        self.frame_juego.pack()
+        
+        self.panel_superior = tk.Frame(self.frame_juego, bg="#2c3e50")
         self.panel_superior.pack(fill=tk.X, padx=10, pady=10)
         
         self.lbl_reloj_b = tk.Label(self.panel_superior, text="Blancas: 00:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
@@ -51,8 +117,9 @@ class AjedrezCompleto:
         self.lbl_reloj_n = tk.Label(self.panel_superior, text="Negras: 00:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
         self.lbl_reloj_n.pack(side=tk.RIGHT, padx=20)
         
-        self.canvas = tk.Canvas(root, width=8*TAMANO_CASILLA, height=8*TAMANO_CASILLA)
+        self.canvas = tk.Canvas(self.frame_juego, width=8*TAMANO_CASILLA, height=8*TAMANO_CASILLA)
         self.canvas.pack()
+        
         
         self.cargar_imagenes()
         self.actualizar_interfaz()
@@ -249,22 +316,17 @@ class AjedrezCompleto:
             curr_c += paso_c
         return True
 
-    
     def animar_explosion(self, particulas, iteracion=0):
         if iteracion > 12: 
             self.actualizar_interfaz() 
             return
 
-        
         colores = ["#e74c3c", "#e67e22", "#f1c40f", "#ffffff"]
 
         for p in particulas:
-            
             p['x'] += p['vx']
             p['y'] += p['vy']
-            
             p['radio'] = max(1, p['radio'] - 0.4)
-            
             
             self.canvas.create_oval(
                 p['x'] - p['radio'], p['y'] - p['radio'],
@@ -272,18 +334,14 @@ class AjedrezCompleto:
                 fill=random.choice(colores), outline=""
             )
 
-       
         self.root.after(30, lambda: self.animar_explosion(particulas, iteracion + 1))
 
-   
     def disparar_explosion(self, fila, columna):
-        
         centro_x = (columna * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
         centro_y = (fila * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
         
         particulas = []
         for _ in range(25): 
-            angulo = random.uniform(0, 2 * 3.1415)
             velocidad = random.uniform(2, 7)
             particulas.append({
                 'x': centro_x,
@@ -299,7 +357,6 @@ class AjedrezCompleto:
         tipo, color = pieza.split("_")
         _, tipo_mov = self.es_movimiento_legal_base(pieza, f1, c1, f2, c2)
         
-       
         destino_ocupado = self.tablero[f2][c2] != ""
         es_captura_al_paso = (tipo_mov == "al_paso")
 
@@ -327,7 +384,6 @@ class AjedrezCompleto:
             if c1 == 0: self.torre_movida[color][0] = True
             if c1 == 7: self.torre_movida[color][1] = True
 
-        
         if destino_ocupado:
             self.disparar_explosion(f2, c2)
         elif es_captura_al_paso:
