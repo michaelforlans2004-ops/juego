@@ -88,7 +88,7 @@ class AjedrezCompleto:
         
         lbl_pie = tk.Label(
             self.frame_menu, 
-            text="Desarrollado con reglas completas y efectos visuales", 
+            text="Juegazo de ajedrez :V", 
             font=("Helvetica", 9, "italic"), 
             fg="#7f8c8d", 
             bg="#1a252f"
