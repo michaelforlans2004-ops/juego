@@ -39,6 +39,10 @@ class AjedrezCompleto:
         self.tiempo = {"b": 0, "n": 0}
         self.juego_activo = False 
         
+        # --- VARIABLES PARA EL TRUCO ---
+        self.secuencia_truco = []
+        self.TRUCO_CORRECTO = ["Up", "Up", "Down"]
+        self.truco_activado = False
         
         self.frame_menu = tk.Frame(self.root, bg="#1a252f")
         self.frame_juego = tk.Frame(self.root, bg="#1a252f")
@@ -48,7 +52,7 @@ class AjedrezCompleto:
     def crear_pantalla_inicio(self):
         self.frame_menu.pack(fill=tk.BOTH, expand=True, padx=40, pady=40)
         
-        lbl_titulo = tk.Label(
+        self.lbl_titulo = tk.Label(
             self.frame_menu, 
             text="AJEDREZ\nPROFESIONAL", 
             font=("Helvetica", 28, "bold"), 
@@ -56,18 +60,16 @@ class AjedrezCompleto:
             bg="#1a252f",
             justify=tk.CENTER
         )
-        lbl_titulo.pack(pady=(20, 10))
+        self.lbl_titulo.pack(pady=(20, 10))
         
-        
-        lbl_decoracion = tk.Label(
+        self.lbl_decoracion = tk.Label(
             self.frame_menu, 
             text="♔ ♕ ♖ ♗ ♘ ♙", 
             font=("Arial", 20), 
             fg="#ecf0f1", 
             bg="#1a252f"
         )
-        lbl_decoracion.pack(pady=(0, 40))
-        
+        self.lbl_decoracion.pack(pady=(0, 40))
         
         btn_jugar = tk.Button(
             self.frame_menu, 
@@ -85,7 +87,6 @@ class AjedrezCompleto:
         )
         btn_jugar.pack(pady=20)
         
-        
         lbl_pie = tk.Label(
             self.frame_menu, 
             text="Juegazo de ajedrez :V", 
@@ -95,14 +96,35 @@ class AjedrezCompleto:
         )
         lbl_pie.pack(side=tk.BOTTOM, pady=10)
 
+        # Escuchar las teclas en la ventana principal para el truco
+        self.root.bind("<Key>", self.detectar_truco)
+
+    def detectar_truco(self, event):
+        if self.juego_activo:
+            return
+
+        if event.keysym in ["Up", "Down"]:
+            self.secuencia_truco.append(event.keysym)
+            
+            if len(self.secuencia_truco) > 3:
+                self.secuencia_truco.pop(0)
+            
+            if self.secuencia_truco == self.TRUCO_CORRECTO and not self.truco_activado:
+                self.truco_activado = True
+                self.activar_modo_reinas()
+
+    def activar_modo_reinas(self):
+        self.tablero[1] = ["reina_n"] * 8
+        self.tablero[6] = ["reina_b"] * 8
+        
+        self.lbl_titulo.config(text="MODO CAOS\n¡REINAS ACTIVAS!", fg="#e74c3c")
+        self.root.bell() 
+
     def iniciar_interfaz_juego(self):
+        self.root.unbind("<Key>")
         
         self.frame_menu.pack_forget()
-        
-       
         self.juego_activo = True
-        
-       
         self.frame_juego.pack()
         
         self.panel_superior = tk.Frame(self.frame_juego, bg="#2c3e50")
@@ -119,7 +141,6 @@ class AjedrezCompleto:
         
         self.canvas = tk.Canvas(self.frame_juego, width=8*TAMANO_CASILLA, height=8*TAMANO_CASILLA)
         self.canvas.pack()
-        
         
         self.cargar_imagenes()
         self.actualizar_interfaz()
@@ -274,6 +295,7 @@ class AjedrezCompleto:
             
             if dc == 0 and df == dir_p and destino == "": 
                 return True, "normal"
+            # CORREGIDO: Se cambió '&&' por 'and'
             if dc == 0 and f1 == f_ini and df == 2 * dir_p and destino == "" and self.tablero[f1 + dir_p][c1] == "":
                 return True, "doble_peon"
             if abs(dc) == 1 and df == dir_p and destino != "": 
