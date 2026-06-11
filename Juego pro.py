@@ -19,7 +19,6 @@ class AjedrezCompleto:
         self.root = root
         self.root.title("Ajedrez Profesional - Reglas Completas")
         self.root.configure(bg="#1a252f")
-        
         self.tablero = [
             ["torre_n", "caballo_n", "alfil_n", "reina_n", "rey_n", "alfil_n", "caballo_n", "torre_n"],
             ["peon_n"] * 8,
@@ -31,84 +30,37 @@ class AjedrezCompleto:
         self.origen_seleccionado = None
         self.movimientos_posibles = [] 
         self.imagenes_piezas = {}
-        
         self.rey_movido = {"b": False, "n": False}
         self.torre_movida = {"b": [False, False], "n": [False, False]} 
         self.ultimo_avance_doble_peon = None 
-        
         self.tiempo = {"b": 0, "n": 0}
         self.juego_activo = False 
-        
-        # --- VARIABLES PARA EL TRUCO ---
         self.secuencia_truco = []
         self.TRUCO_CORRECTO = ["Up", "Up", "Down"]
         self.truco_activado = False
-        
         self.frame_menu = tk.Frame(self.root, bg="#1a252f")
         self.frame_juego = tk.Frame(self.root, bg="#1a252f")
-        
         self.crear_pantalla_inicio()
 
     def crear_pantalla_inicio(self):
         self.frame_menu.pack(fill=tk.BOTH, expand=True, padx=40, pady=40)
-        
-        self.lbl_titulo = tk.Label(
-            self.frame_menu, 
-            text="AJEDREZ\nPROFESIONAL", 
-            font=("Helvetica", 28, "bold"), 
-            fg="#f1c40f", 
-            bg="#1a252f",
-            justify=tk.CENTER
-        )
+        self.lbl_titulo = tk.Label(self.frame_menu, text="AJEDREZ\nPROFESIONAL", font=("Helvetica", 28, "bold"), fg="#f1c40f", bg="#1a252f", justify=tk.CENTER)
         self.lbl_titulo.pack(pady=(20, 10))
-        
-        self.lbl_decoracion = tk.Label(
-            self.frame_menu, 
-            text="♔ ♕ ♖ ♗ ♘ ♙", 
-            font=("Arial", 20), 
-            fg="#ecf0f1", 
-            bg="#1a252f"
-        )
+        self.lbl_decoracion = tk.Label(self.frame_menu, text="♔ ♕ ♖ ♗ ♘ ♙", font=("Arial", 20), fg="#ecf0f1", bg="#1a252f")
         self.lbl_decoracion.pack(pady=(0, 40))
-        
-        btn_jugar = tk.Button(
-            self.frame_menu, 
-            text="JUGAR PARTIDA", 
-            font=("Helvetica", 14, "bold"),
-            bg="#2ecc71", 
-            fg="white", 
-            activebackground="#27ae60", 
-            activeforeground="white",
-            padx=20, 
-            pady=10, 
-            bd=0, 
-            cursor="hand2",
-            command=self.iniciar_interfaz_juego
-        )
+        btn_jugar = tk.Button(self.frame_menu, text="JUGAR PARTIDA", font=("Helvetica", 14, "bold"), bg="#2ecc71", fg="white", activebackground="#27ae60", activeforeground="white", padx=20, pady=10, bd=0, cursor="hand2", command=self.iniciar_interfaz_juego)
         btn_jugar.pack(pady=20)
-        
-        lbl_pie = tk.Label(
-            self.frame_menu, 
-            text="Juegazo de ajedrez :V", 
-            font=("Helvetica", 9, "italic"), 
-            fg="#7f8c8d", 
-            bg="#1a252f"
-        )
+        lbl_pie = tk.Label(self.frame_menu, text="Juegazo de ajedrez :V", font=("Helvetica", 9, "italic"), fg="#7f8c8d", bg="#1a252f")
         lbl_pie.pack(side=tk.BOTTOM, pady=10)
-
-        # Escuchar las teclas en la ventana principal para el truco
         self.root.bind("<Key>", self.detectar_truco)
 
     def detectar_truco(self, event):
         if self.juego_activo:
             return
-
         if event.keysym in ["Up", "Down"]:
             self.secuencia_truco.append(event.keysym)
-            
             if len(self.secuencia_truco) > 3:
                 self.secuencia_truco.pop(0)
-            
             if self.secuencia_truco == self.TRUCO_CORRECTO and not self.truco_activado:
                 self.truco_activado = True
                 self.activar_modo_reinas()
@@ -116,35 +68,26 @@ class AjedrezCompleto:
     def activar_modo_reinas(self):
         self.tablero[1] = ["reina_n"] * 8
         self.tablero[6] = ["reina_b"] * 8
-        
         self.lbl_titulo.config(text="MODO CAOS\n¡REINAS ACTIVAS!", fg="#e74c3c")
         self.root.bell() 
 
     def iniciar_interfaz_juego(self):
         self.root.unbind("<Key>")
-        
         self.frame_menu.pack_forget()
         self.juego_activo = True
         self.frame_juego.pack()
-        
         self.panel_superior = tk.Frame(self.frame_juego, bg="#2c3e50")
         self.panel_superior.pack(fill=tk.X, padx=10, pady=10)
-        
         self.lbl_reloj_b = tk.Label(self.panel_superior, text="Blancas: 00:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
         self.lbl_reloj_b.pack(side=tk.LEFT, padx=20)
-        
         self.lbl_estado = tk.Label(self.panel_superior, text="Turno: Blancas", font=("Arial", 14), fg="#f1c40f", bg="#2c3e50")
         self.lbl_estado.pack(side=tk.TOP)
-        
         self.lbl_reloj_n = tk.Label(self.panel_superior, text="Negras: 00:00", font=("Arial", 14, "bold"), fg="white", bg="#2c3e50")
         self.lbl_reloj_n.pack(side=tk.RIGHT, padx=20)
-        
         self.canvas = tk.Canvas(self.frame_juego, width=8*TAMANO_CASILLA, height=8*TAMANO_CASILLA)
         self.canvas.pack()
-        
         self.cargar_imagenes()
         self.actualizar_interfaz()
-        
         self.canvas.bind("<Button-1>", self.gestionar_clic)
         self.actualizar_reloj()
 
@@ -158,41 +101,34 @@ class AjedrezCompleto:
 
     def actualizar_interfaz(self):
         self.canvas.delete("all")
-        
         for fila in range(8):
             for columna in range(8):
                 color = COLOR_CLARO if (fila + columna) % 2 == 0 else COLOR_OSCURO
                 x1, y1 = columna * TAMANO_CASILLA, fila * TAMANO_CASILLA
                 self.canvas.create_rectangle(x1, y1, x1 + TAMANO_CASILLA, y1 + TAMANO_CASILLA, fill=color, outline="")
-
         for (f, c) in self.movimientos_posibles:
             x1, y1 = c * TAMANO_CASILLA, f * TAMANO_CASILLA
             radio = 12
             centro_x, centro_y = x1 + TAMANO_CASILLA // 2, y1 + TAMANO_CASILLA // 2
             self.canvas.create_oval(centro_x - radio, centro_y - radio, centro_x + radio, centro_y + radio, fill=COLOR_POSIBLE, outline="")
-
         if self.origen_seleccionado:
             f, c = self.origen_seleccionado
             x1, y1 = c * TAMANO_CASILLA, f * TAMANO_CASILLA
             self.canvas.create_rectangle(x1, y1, x1 + TAMANO_CASILLA, y1 + TAMANO_CASILLA, fill=COLOR_SELECCION, outline="")
-
         for fila in range(8):
             for columna in range(8):
                 nombre_pieza = self.tablero[fila][columna]
                 if nombre_pieza != "":
                     x = (columna * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
                     y = (fila * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
-                    
                     if self.imagenes_piezas.get(nombre_pieza):
                         self.canvas.create_image(x, y, image=self.imagenes_piezas[nombre_pieza])
                     else:
                         simbolo = SIMBOLOS_PIEZAS.get(nombre_pieza, "?")
                         color_pieza = nombre_pieza.split("_")[1]
-                        
                         color_txt = "#FFFFFF" if color_pieza == "b" else "#000000"
                         color_borde = "#000000" if color_pieza == "b" else "#FFFFFF"
                         fuente = ("Arial", 36, "bold")
-                        
                         for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
                             self.canvas.create_text(x+dx, y+dy, text=simbolo, font=fuente, fill=color_borde)
                         self.canvas.create_text(x, y, text=simbolo, font=fuente, fill=color_txt)
@@ -200,22 +136,17 @@ class AjedrezCompleto:
     def actualizar_reloj(self):
         if not self.juego_activo:
             return
-        
         self.tiempo[self.turno] += 1
-        
         for c, lbl in [("b", self.lbl_reloj_b), ("n", self.lbl_reloj_n)]:
             minutos = self.tiempo[c] // 60
             segundos = self.tiempo[c] % 60
             lbl.config(text=f"{'Blancas' if c=='b' else 'Negras'}: {minutos:02d}:{segundos:02d}")
-            
         self.root.after(1000, self.actualizar_reloj)
 
     def gestionar_clic(self, event):
         if not self.juego_activo: return
-        
         columna = event.x // TAMANO_CASILLA
         fila = event.y // TAMANO_CASILLA
-        
         if self.origen_seleccionado is None:
             pieza = self.tablero[fila][columna]
             if pieza != "" and pieza.endswith(f"_{self.turno}"):
@@ -233,15 +164,11 @@ class AjedrezCompleto:
                 self.movimientos_posibles = [] 
                 self.actualizar_interfaz()
                 return
-
             pieza = self.tablero[f_orig][c_orig]
-            
             if self.es_movimiento_legal_completo(pieza, f_orig, c_orig, fila, columna):
                 self.ejecutar_movimiento(pieza, f_orig, c_orig, fila, columna)
-                
                 self.turno = "n" if self.turno == "b" else "b"
                 self.lbl_estado.config(text=f"Turno: {'Blancas' if self.turno == 'b' else 'Negras'}")
-                
                 if self.esta_en_jaque(self.turno, self.tablero):
                     if self.tiene_movimientos_legales(self.turno):
                         self.lbl_estado.config(text=f"¡Jaque a las {'Blancas' if self.turno == 'b' else 'Negras'}!", fg="#e74c3c")
@@ -251,7 +178,6 @@ class AjedrezCompleto:
                 elif not self.tiene_movimientos_legales(self.turno):
                     self.lbl_estado.config(text="Tablas por Ahogado", fg="#95a5a6")
                     self.juego_activo = False
-                    
             self.origen_seleccionado = None
             self.movimientos_posibles = [] 
             self.actualizar_interfaz()
@@ -260,42 +186,33 @@ class AjedrezCompleto:
         legal_base, tipo_mov = self.es_movimiento_legal_base(pieza, f1, c1, f2, c2)
         if not legal_base:
             return False
-            
         tablero_clon = [fila[:] for fila in self.tablero]
         color = pieza.split("_")[1]
-        
         tablero_clon[f2][c2] = pieza
         tablero_clon[f1][c1] = ""
         if tipo_mov == "al_paso" and self.ultimo_avance_doble_peon:
             _, cp = self.ultimo_avance_doble_peon
             tablero_clon[f1][cp] = ""
-            
         if self.esta_en_jaque(color, tablero_clon):
             return False
-            
         if tipo_mov == "enroque":
             paso_c = 1 if c2 > c1 else -1
             if self.esta_en_jaque(color, self.tablero) or \
                self.casilla_amenazada(color, f1, c1 + paso_c, self.tablero):
                 return False
-                
         return True
 
     def es_movimiento_legal_base(self, pieza, f1, c1, f2, c2):
         tipo, color = pieza.split("_")
         destino = self.tablero[f2][c2]
         df, dc = f2 - f1, c2 - c1
-        
         if destino != "" and destino.endswith(f"_{color}"): 
             return False, None
-
         if tipo == "peon":
             dir_p = -1 if color == "b" else 1
             f_ini = 6 if color == "b" else 1
-            
             if dc == 0 and df == dir_p and destino == "": 
                 return True, "normal"
-            # CORREGIDO: Se cambió '&&' por 'and'
             if dc == 0 and f1 == f_ini and df == 2 * dir_p and destino == "" and self.tablero[f1 + dir_p][c1] == "":
                 return True, "doble_peon"
             if abs(dc) == 1 and df == dir_p and destino != "": 
@@ -303,12 +220,10 @@ class AjedrezCompleto:
             if abs(dc) == 1 and df == dir_p and destino == "" and self.ultimo_avance_doble_peon == (f1, c2):
                 return True, "al_paso"
             return False, None
-
         elif tipo == "caballo":
             if (abs(df) == 2 and abs(dc) == 1) or (abs(df) == 1 and abs(dc) == 2):
                 return True, "normal"
             return False, None
-
         elif tipo == "rey":
             if abs(df) <= 1 and abs(dc) <= 1: 
                 return True, "normal"
@@ -318,14 +233,12 @@ class AjedrezCompleto:
                 if dc == -2 and not self.torre_movida[color][0] and self.camino_libre(f1, c1, f1, 0): 
                     return True, "enroque"
             return False, None
-
         elif tipo == "torre":
             if (f1 == f2 or c1 == c2) and self.camino_libre(f1, c1, f2, c2): return True, "normal"
         elif tipo == "alfil":
             if abs(df) == abs(dc) and self.camino_libre(f1, c1, f2, c2): return True, "normal"
         elif tipo == "reina":
             if (f1 == f2 or c1 == c2 or abs(df) == abs(dc)) and self.camino_libre(f1, c1, f2, c2): return True, "normal"
-            
         return False, None
 
     def camino_libre(self, f1, c1, f2, c2):
@@ -342,26 +255,17 @@ class AjedrezCompleto:
         if iteracion > 12: 
             self.actualizar_interfaz() 
             return
-
         colores = ["#e74c3c", "#e67e22", "#f1c40f", "#ffffff"]
-
         for p in particulas:
             p['x'] += p['vx']
             p['y'] += p['vy']
             p['radio'] = max(1, p['radio'] - 0.4)
-            
-            self.canvas.create_oval(
-                p['x'] - p['radio'], p['y'] - p['radio'],
-                p['x'] + p['radio'], p['y'] + p['radio'],
-                fill=random.choice(colores), outline=""
-            )
-
+            self.canvas.create_oval(p['x'] - p['radio'], p['y'] - p['radio'], p['x'] + p['radio'], p['y'] + p['radio'], fill=random.choice(colores), outline="")
         self.root.after(30, lambda: self.animar_explosion(particulas, iteracion + 1))
 
     def disparar_explosion(self, fila, columna):
         centro_x = (columna * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
         centro_y = (fila * TAMANO_CASILLA) + (TAMANO_CASILLA // 2)
-        
         particulas = []
         for _ in range(25): 
             velocidad = random.uniform(2, 7)
@@ -372,24 +276,18 @@ class AjedrezCompleto:
                 'vy': velocidad * random.uniform(-1, 1),
                 'radio': random.uniform(4, 9)
             })
-        
         self.animar_explosion(particulas)
 
     def ejecutar_movimiento(self, pieza, f1, c1, f2, c2):
         tipo, color = pieza.split("_")
         _, tipo_mov = self.es_movimiento_legal_base(pieza, f1, c1, f2, c2)
-        
         destino_ocupado = self.tablero[f2][c2] != ""
         es_captura_al_paso = (tipo_mov == "al_paso")
-
         self.tablero[f2][c2] = pieza
         self.tablero[f1][c1] = ""
-        
         self.ultimo_avance_doble_peon = (f2, c2) if tipo_mov == "doble_peon" else None
-        
         if tipo_mov == "al_paso":
             self.tablero[f1][c2] = ""
-            
         if tipo_mov == "enroque":
             if c2 == 6: 
                 self.tablero[f2][5] = f"torre_{color}"
@@ -397,15 +295,12 @@ class AjedrezCompleto:
             elif c2 == 2: 
                 self.tablero[f2][3] = f"torre_{color}"
                 self.tablero[f2][0] = ""
-
         if tipo == "peon" and (f2 == 0 or f2 == 7):
             self.tablero[f2][c2] = f"reina_{color}"
-            
         if tipo == "rey": self.rey_movido[color] = True
         if tipo == "torre":
             if c1 == 0: self.torre_movida[color][0] = True
             if c1 == 7: self.torre_movida[color][1] = True
-
         if destino_ocupado:
             self.disparar_explosion(f2, c2)
         elif es_captura_al_paso:
